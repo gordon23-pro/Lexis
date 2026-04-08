@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lexis">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0d0f">
+<title>Lexis — Үг цээжлэх</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230d0d0f'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E📖%3C/text%3E%3C/svg%3E">
+
+<style>
+:root{
+  --bg:#0d0d0f;--bg2:#17171c;--bg3:#1f1f27;--bg4:#2a2a35;
+  --wire:#2e2e3a;--wire2:#3a3a48;--dim:#52526a;--mid:#8888a8;
+  --pale:#c8c8e0;--snow:#eeeef8;
+  --gold:#f0c060;--gold2:#c89030;
+  --teal:#50c8b0;--teal2:#1D9E75;--teal3:#E1F5EE;
+  --rose:#e07080;--rose2:#993C1D;--rose3:#FAECE7;
+  --lav:#a080e0;--lav2:#534AB7;--lav3:#EEEDFE;--lav4:#AFA9EC;
+  --r:12px;--r2:18px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color:var(--snow);
+  padding-top:var(--safe-top);
+  padding-bottom:var(--safe-bot);
+  overscroll-behavior:none;
+}
+
+/* ── APP SHELL ── */
+.app{display:flex;flex-direction:column;height:100%;max-width:500px;margin:0 auto;}
+
+/* ── TOP BAR ── */
+.top-bar{
+  padding:14px 20px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:0.5px solid var(--wire);
+  flex-shrink:0;
+  background:rgba(13,13,15,.95);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+.app-title{
+  font-size:24px;font-weight:700;
+  font-family:-apple-system,BlinkMacSystemFont,Georgia,serif;
+  color:var(--snow);letter-spacing:-0.5px;
+}
+.app-title span{color:var(--lav);}
+.top-pills{display:flex;gap:6px;}
+.mini-pill{
+  background:var(--bg3);border:0.5px solid var(--wire);
+  border-radius:20px;padding:4px 11px;
+  font-size:12px;color:var(--mid);
+}
+.mini-pill b{color:var(--snow);font-weight:600;}
+
+/* ── SCROLL AREA ── */
+.scroll-area{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+}
+.scroll-area::-webkit-scrollbar{display:none;}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  display:flex;flex-shrink:0;
+  border-top:0.5px solid var(--wire);
+  background:rgba(13,13,15,.97);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  padding-bottom:max(var(--safe-bot), 4px);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:4px;padding:10px 4px 8px;
+  border:none;background:none;cursor:pointer;
+  color:var(--dim);transition:color .15s;
+}
+.nav-item.active{color:var(--lav);}
+.nav-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;transition:stroke .15s;}
+.nav-label{font-size:10px;font-weight:500;}
+.nav-badge{
+  background:var(--lav2);color:#fff;
+  border-radius:10px;font-size:9px;
+  padding:1px 6px;font-weight:600;line-height:1.5;
+  display:inline-block;margin-top:-2px;
+}
+
+/* ── VIEW ── */
+.view{display:none;}
+.view.active{display:block;animation:fadeUp .2s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ── WORDS ── */
+.search-bar{padding:14px 16px 10px;position:relative;}
+.search-bar input{
+  width:100%;background:var(--bg2);
+  border:0.5px solid var(--wire);border-radius:12px;
+  padding:11px 14px 11px 40px;
+  font-size:15px;color:var(--snow);outline:none;
+}
+.search-bar input::placeholder{color:var(--dim);}
+.search-bar input:focus{border-color:var(--lav4);}
+.s-ico{position:absolute;left:28px;top:50%;transform:translateY(-50%);}
+.s-ico svg{width:16px;height:16px;stroke:var(--dim);fill:none;stroke-width:2;}
+
+.filter-chips{
+  display:flex;gap:8px;padding:0 16px 12px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.filter-chips::-webkit-scrollbar{display:none;}
+.fchip{
+  border:0.5px solid var(--wire);border-radius:20px;
+  padding:6px 14px;font-size:13px;font-weight:500;
+  color:var(--dim);background:none;cursor:pointer;white-space:nowrap;
+  transition:.15s;
+}
+.fchip.active{background:var(--lav3);border-color:var(--lav4);color:var(--lav2);}
+
+.word-list{padding:0 12px 20px;display:flex;flex-direction:column;gap:2px;}
+
+.wcard{
+  background:var(--bg2);border:0.5px solid var(--wire);
+  border-radius:var(--r2);overflow:hidden;
+  transition:border-color .15s;
+  display:flex;align-items:stretch;
+}
+.wcard:active{transform:scale(.99);}
+.wcard-accent{width:3px;flex-shrink:0;background:var(--wire2);border-radius:3px 0 0 3px;}
+.wcard.known .wcard-accent{background:var(--teal2);}
+.wcard-body{flex:1;padding:13px 10px 13px 14px;min-width:0;}
+.wcard-word{
+  font-size:16px;font-weight:600;color:var(--snow);
+  line-height:1.2;margin-bottom:3px;
+  font-family:-apple-system,BlinkMacSystemFont,Georgia,serif;
+}
+.wcard-def{font-size:13px;color:var(--mid);line-height:1.4;margin-bottom:5px;}
+.wcard-eg{
+  font-size:12px;color:var(--dim);font-style:italic;line-height:1.4;
+  padding-left:8px;border-left:2px solid var(--wire2);margin-top:5px;
+}
+.wcard-tag{
+  display:inline-block;background:var(--bg4);border:0.5px solid var(--wire);
+  border-radius:6px;padding:2px 8px;font-size:11px;color:var(--mid);margin-top:7px;
+}
+.wcard-acts{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 12px 12px 4px;gap:8px;}
+.know-btn{
+  width:30px;height:30px;border-radius:50%;
+  border:1.5px solid var(--wire2);background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.know-btn svg{width:13px;height:13px;stroke:var(--dim);fill:none;stroke-width:2.5;}
+.wcard.known .know-btn{background:var(--teal3);border-color:var(--teal2);}
+.wcard.known .know-btn svg{stroke:var(--teal2);}
+.del-btn{
+  width:28px;height:28px;border-radius:8px;
+  border:none;background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;opacity:.35;transition:.15s;
+}
+.del-btn:hover,.del-btn:active{opacity:1;background:var(--rose3);}
+.del-btn svg{width:14px;height:14px;stroke:var(--rose);fill:none;stroke-width:2;}
+
+.empty-msg{text-align:center;padding:64px 24px;}
+.empty-msg svg{width:48px;height:48px;stroke:var(--wire2);fill:none;stroke-width:1;margin:0 auto 14px;display:block;}
+.empty-msg h3{font-size:17px;font-weight:600;color:var(--pale);margin-bottom:8px;}
+.empty-msg p{font-size:14px;color:var(--dim);line-height:1.6;}
+
+/* ── ADD ── */
+.add-view{padding:20px 16px 32px;}
+.sec-head{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-bottom:10px;}
+
+.drop-zone{
+  border:1.5px dashed var(--wire2);border-radius:var(--r2);
+  padding:32px 20px;text-align:center;cursor:pointer;
+  position:relative;background:var(--bg2);margin-bottom:20px;
+  transition:.2s;
+}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--lav4);background:var(--bg3);}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-icon{
+  width:44px;height:44px;background:var(--lav3);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 12px;
+}
+.drop-icon svg{width:22px;height:22px;stroke:var(--lav2);fill:none;stroke-width:1.8;}
+.drop-title{font-size:15px;font-weight:600;color:var(--snow);margin-bottom:5px;}
+.drop-sub{font-size:13px;color:var(--dim);line-height:1.6;}
+
+.guide-box{
+  background:var(--bg3);border:0.5px solid var(--wire);
+  border-radius:var(--r);padding:14px;margin-bottom:20px;
+}
+.guide-title{font-size:13px;font-weight:600;color:var(--pale);margin-bottom:10px;}
+.code-eg{
+  background:var(--bg);border:0.5px solid var(--wire);
+  border-radius:8px;padding:12px;
+  font-family:'Menlo','Courier New',monospace;
+  font-size:12px;color:var(--teal);line-height:1.9;
+  white-space:pre;overflow-x:auto;
+}
+.code-eg .cm{color:var(--dim);}
+.code-eg .cv{color:var(--gold);}
+.code-eg .cs{color:var(--rose);}
+
+.divider-row{
+  display:flex;align-items:center;gap:10px;
+  margin:20px 0;color:var(--dim);font-size:12px;
+}
+.divider-row::before,.divider-row::after{content:'';flex:1;height:0.5px;background:var(--wire);}
+
+.field-group{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:12px;font-weight:500;color:var(--mid);}
+.field label span{color:var(--rose);}
+.field input,.field textarea{
+  background:var(--bg3);border:0.5px solid var(--wire);
+  border-radius:11px;color:var(--snow);
+  font-size:15px;padding:12px 14px;outline:none;width:100%;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  transition:.15s;
+}
+.field input::placeholder,.field textarea::placeholder{color:var(--dim);}
+.field input:focus,.field textarea:focus{border-color:var(--lav4);box-shadow:0 0 0 3px rgba(160,128,224,.12);}
+.field textarea{resize:none;height:72px;line-height:1.5;}
+
+.btn-row{display:flex;gap:10px;justify-content:flex-end;}
+.btn{
+  padding:12px 22px;border-radius:12px;
+  font-size:14px;font-weight:600;cursor:pointer;border:none;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  transition:.15s;display:inline-flex;align-items:center;gap:6px;
+}
+.btn:active{transform:scale(.97);}
+.btn-p{background:var(--lav2);color:#fff;}
+.btn-p:hover{background:#6358c0;}
+.btn-g{background:var(--bg3);color:var(--pale);border:0.5px solid var(--wire);}
+
+/* ── STUDY ── */
+.study-wrap{padding:16px 16px 32px;}
+.mode-row{display:flex;gap:8px;margin-bottom:16px;}
+.mode-pill{
+  flex:1;padding:10px;border:0.5px solid var(--wire);
+  border-radius:11px;font-size:13px;font-weight:500;
+  cursor:pointer;background:none;color:var(--dim);
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  text-align:center;transition:.15s;
+}
+.mode-pill.active{background:var(--lav3);border-color:var(--lav4);color:var(--lav2);}
+
+.prog-info{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:7px;}
+.prog-bar{height:3px;background:var(--wire);border-radius:3px;overflow:hidden;margin-bottom:18px;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--lav4),var(--teal));border-radius:3px;transition:width .4s var(--ease);}
+
+/* Notebook card */
+.nb-card{
+  border:0.5px solid var(--wire2);border-radius:var(--r2);
+  background:var(--bg2);margin-bottom:18px;
+  cursor:pointer;min-height:220px;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;position:relative;overflow:hidden;
+  user-select:none;
+}
+.nb-card:active{transform:scale(.99);}
+.nb-lines{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:repeating-linear-gradient(
+    transparent,transparent 27px,
+    var(--wire) 27px,var(--wire) 28px
+  );
+  top:48px;opacity:.4;
+}
+.nb-margin{position:absolute;left:48px;top:0;bottom:0;width:1px;background:#d06070;opacity:.25;}
+.flip-badge{
+  position:absolute;top:12px;right:14px;
+  background:var(--bg4);border:0.5px solid var(--wire2);
+  border-radius:20px;padding:3px 10px;
+  font-size:11px;color:var(--dim);
+  display:flex;align-items:center;gap:4px;
+}
+.flip-badge svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;}
+
+.card-face{width:100%;padding:32px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.c-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--lav);margin-bottom:10px;}
+.c-word{font-size:32px;font-weight:700;color:var(--snow);line-height:1.05;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,Georgia,serif;}
+.c-hint{font-size:12px;color:var(--dim);margin-top:14px;}
+.c-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:10px;}
+.c-def{font-size:18px;color:var(--pale);line-height:1.5;margin-bottom:12px;}
+.c-eg{font-size:13px;color:var(--dim);font-style:italic;line-height:1.5;border-top:0.5px solid var(--wire);padding-top:12px;margin-top:4px;width:100%;}
+
+.ans-row{display:flex;gap:10px;align-items:center;}
+.ans-btn{
+  flex:1;padding:14px;border-radius:14px;border:0.5px solid;
+  font-size:14px;font-weight:600;cursor:pointer;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:.15s;
+}
+.ans-btn:active{transform:scale(.97);}
+.ans-btn svg{width:15px;height:15px;fill:none;stroke-width:2.5;}
+.btn-wrong{background:rgba(224,112,128,.1);border-color:rgba(224,112,128,.3);color:var(--rose);}
+.btn-wrong:active{background:rgba(224,112,128,.2);}
+.btn-wrong svg{stroke:var(--rose);}
+.btn-right{background:rgba(80,200,176,.1);border-color:rgba(80,200,176,.3);color:var(--teal);}
+.btn-right:active{background:rgba(80,200,176,.2);}
+.btn-right svg{stroke:var(--teal);}
+.skip-btn{
+  padding:12px 14px;border:0.5px solid var(--wire);
+  border-radius:12px;background:none;font-size:14px;
+  color:var(--dim);cursor:pointer;transition:.15s;
+}
+.skip-btn:active{background:var(--bg3);}
+
+.done-msg{text-align:center;padding:48px 24px;}
+.done-circle{
+  width:72px;height:72px;background:var(--lav3);
+  border-radius:50%;display:flex;align-items:center;
+  justify-content:center;margin:0 auto 18px;
+}
+.done-circle svg{width:34px;height:34px;stroke:var(--lav2);fill:none;stroke-width:2;}
+.done-title{font-size:22px;font-weight:700;color:var(--snow);font-family:Georgia,serif;margin-bottom:8px;}
+.done-sub{font-size:14px;color:var(--dim);line-height:1.7;margin-bottom:24px;}
+
+/* ── STATS ── */
+.stats-wrap{padding:20px 16px 32px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.stat-c{background:var(--bg2);border:0.5px solid var(--wire);border-radius:var(--r2);padding:18px;}
+.stat-n{font-size:32px;font-weight:700;color:var(--snow);line-height:1;font-family:Georgia,serif;}
+.stat-l{font-size:12px;color:var(--dim);margin-top:5px;}
+.s-lav .stat-n{color:var(--lav);}
+.s-teal .stat-n{color:var(--teal);}
+.s-rose .stat-n{color:var(--rose);}
+
+.prog-section{margin-bottom:20px;}
+.ps-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+.ps-row span{color:var(--dim);}
+.ps-row b{color:var(--pale);font-weight:600;}
+.ps-bar{height:7px;background:var(--wire);border-radius:4px;overflow:hidden;margin-bottom:14px;}
+.ps-fill{height:100%;border-radius:4px;transition:width .5s var(--ease);}
+.pf-lav{background:linear-gradient(90deg,var(--lav2),var(--lav));}
+.pf-teal{background:linear-gradient(90deg,var(--teal2),var(--teal));}
+
+.tag-section{margin-bottom:20px;}
+.tag-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--wire);}
+.tag-name{font-size:13px;color:var(--pale);min-width:80px;font-weight:500;}
+.tag-bar-w{flex:1;height:5px;background:var(--wire);border-radius:3px;overflow:hidden;}
+.tag-bar-f{height:100%;background:var(--lav4);border-radius:3px;}
+.tag-frac{font-size:12px;color:var(--dim);min-width:40px;text-align:right;}
+
+.action-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.act-btn{
+  padding:11px 16px;border-radius:12px;
+  border:0.5px solid var(--wire);font-size:13px;
+  cursor:pointer;background:none;color:var(--mid);
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  display:flex;align-items:center;gap:7px;transition:.15s;
+}
+.act-btn:active{background:var(--bg3);}
+.act-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
+.act-btn.danger{color:var(--rose);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:calc(72px + var(--safe-bot) + 16px);
+  left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--snow);color:var(--bg);
+  font-size:13px;font-weight:600;
+  padding:10px 22px;border-radius:24px;
+  z-index:999;transition:all .3s var(--ease);
+  pointer-events:none;opacity:0;white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── INSTALL BANNER ── */
+.install-bar{
+  background:var(--lav3);
+  padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border-bottom:0.5px solid var(--lav4);
+}
+.install-bar p{font-size:13px;color:var(--lav2);font-weight:500;line-height:1.4;}
+.install-bar button{
+  background:var(--lav2);color:#fff;
+  border:none;border-radius:8px;
+  padding:7px 14px;font-size:13px;font-weight:600;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+.install-bar .close-btn{background:none;color:var(--dim);padding:4px;font-size:16px;border:none;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top-bar">
+    <div class="app-title">Le<span>xis</span></div>
+    <div class="top-pills">
+      <div class="mini-pill"><b id="hTotal">0</b> үг</div>
+      <div class="mini-pill">✓ <b id="hKnown">0</b></div>
+    </div>
+  </div>
+
+  <!-- Install hint for iOS -->
+  <div class="install-bar" id="installBar" style="display:none">
+    <p>Нүүр дэлгэцэнд нэмэхийн тулд <b>Safari</b>-д нээж, "Нүүр дэлгэцэнд нэмэх" товчийг дарна уу.</p>
+    <button class="close-btn" onclick="document.getElementById('installBar').style.display='none'">✕</button>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- ── WORDS ── -->
+    <div class="view active" id="vw-words">
+      <div class="search-bar">
+        <div class="s-ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <input type="text" placeholder="Үг хайх..." id="searchInput" oninput="renderWords()">
+      </div>
+      <div class="filter-chips">
+        <button class="fchip active" onclick="setF('all',this)">Бүгд</button>
+        <button class="fchip" onclick="setF('unknown',this)">Мэдэхгүй</button>
+        <button class="fchip" onclick="setF('known',this)">Мэддэг ✓</button>
+      </div>
+      <div class="word-list" id="wordGrid"></div>
+    </div>
+
+    <!-- ── ADD ── -->
+    <div class="view" id="vw-add">
+      <div class="add-view">
+        <div class="sec-head">Файлаас оруулах</div>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" accept=".txt,.csv,.tsv" onchange="handleFile(event)" multiple>
+          <div class="drop-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="drop-title">Файл оруулах</div>
+          <div class="drop-sub">TXT · CSV · TSV дэмжинэ<br>Нэг дор олон файл оруулж болно</div>
+        </div>
+
+        <div class="guide-box">
+          <div class="guide-title">📋 Файлын формат</div>
+          <div class="code-eg"><span class="cm"># мөр бүр нэг үг</span>
+<span class="cv">abandon</span>, <span class="cs">орхих</span>, She abandoned it., IELTS
+<span class="cv">benevolent</span>, <span class="cs">сайн сэтгэлтэй</span>
+<span class="cv">concise</span>, <span class="cs">товч тодорхой</span>, Be concise., GRE</div>
+        </div>
+
+        <div class="divider-row">эсвэл гараар нэмэх</div>
+
+        <div class="field-group">
+          <div class="row2">
+            <div class="field"><label>Үг / Хэллэг <span>*</span></label><input type="text" id="fw" placeholder="ephemeral" autocorrect="off" spellcheck="false"></div>
+            <div class="field"><label>Монгол утга <span>*</span></label><input type="text" id="fd" placeholder="богино хугацааны"></div>
+          </div>
+          <div class="field"><label>Жишээ өгүүлбэр</label><textarea id="fn" placeholder="Youth is ephemeral — treasure every moment."></textarea></div>
+          <div class="field"><label>Ангилал / Шошго</label><input type="text" id="ft" placeholder="IELTS, GRE, Өдөр тутам..."></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-g" onclick="clearForm()">Цэвэрлэх</button>
+          <button class="btn btn-p" onclick="addWord()">+ Нэмэх</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STUDY ── -->
+    <div class="view" id="vw-study">
+      <div class="study-wrap">
+        <div class="mode-row">
+          <button class="mode-pill active" onclick="setMode('unknown',this)">Мэдэхгүй үгс</button>
+          <button class="mode-pill" onclick="setMode('all',this)">Бүгдийг давтах</button>
+        </div>
+
+        <div id="studyEmpty" style="display:none">
+          <div class="empty-msg">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <h3 id="emptyTitle">Үг байхгүй</h3>
+            <p id="emptyTxt">Эхлээд үгс нэмнэ үү</p>
+          </div>
+        </div>
+
+        <div id="studyDone" style="display:none">
+          <div class="done-msg">
+            <div class="done-circle"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="done-title">Гайхалтай!</div>
+            <div class="done-sub">Бүх үгийг давтлаа.<br>Чи маш сайн байна! 🎉</div>
+            <button class="btn btn-p" onclick="restartStudy()">↺ Дахин эхлэх</button>
+          </div>
+        </div>
+
+        <div id="studyMain" style="display:none">
+          <div class="prog-info">
+            <span><b id="cIdx">1</b> / <b id="cTot">0</b></span>
+            <span id="cSession">0 мэддэг болсон</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" id="cProgFill" style="width:0%"></div></div>
+
+          <div class="nb-card" id="nbCard" onclick="flipCard()">
+            <div class="nb-lines"></div>
+            <div class="nb-margin"></div>
+            <div class="flip-badge">
+              <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 101.85-4.35L1 10"/></svg>
+              товших
+            </div>
+            <div id="cardFront" class="card-face">
+              <div class="c-tag" id="cTag"></div>
+              <div class="c-word" id="cWord">—</div>
+              <div class="c-hint">товшиж нөгөө талыг харах</div>
+            </div>
+            <div id="cardBack" class="card-face" style="display:none">
+              <div class="c-label">Тайлбар</div>
+              <div class="c-def" id="cDef">—</div>
+              <div class="c-eg" id="cEg" style="display:none"></div>
+            </div>
+          </div>
+
+          <div class="ans-row">
+            <button class="ans-btn btn-wrong" onclick="answer(false)">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Мэдэхгүй
+            </button>
+            <button class="skip-btn" onclick="skipCard()">→</button>
+            <button class="ans-btn btn-right" onclick="answer(true)">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Мэддэг
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATS ── -->
+    <div class="view" id="vw-stats">
+      <div class="stats-wrap">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="sec-head">Дэвшил</div>
+        <div class="prog-section" id="progSection"></div>
+        <div class="sec-head">Ангилалаар</div>
+        <div class="tag-section" id="tagList"></div>
+        <div class="action-btns">
+          <button class="act-btn" onclick="exportTxt()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Экспорт (.txt)
+          </button>
+          <button class="act-btn danger" onclick="clearAll()">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            Бүгдийг устгах
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- scroll-area -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nb-words" onclick="go('words',this)">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      <span class="nav-label">Үгс <span class="nav-badge" id="navBadge">0</span></span>
+    </button>
+    <button class="nav-item" id="nb-add" onclick="go('add',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span class="nav-label">Нэмэх</span>
+    </button>
+    <button class="nav-item" id="nb-study" onclick="go('study',this)">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <span class="nav-label">Цээжлэх</span>
+    </button>
+    <button class="nav-item" id="nb-stats" onclick="go('stats',this)">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="nav-label">Явц</span>
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+let W = JSON.parse(localStorage.getItem('lexis_v2') || '[]');
+let filter = 'all', studyQ = [], sIdx = 0, sFlipped = false, sSessionKnown = 0, studyMode = 'unknown';
+
+const save = () => { localStorage.setItem('lexis_v2', JSON.stringify(W)); updateHeader(); };
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function updateHeader() {
+  const t = W.length, k = W.filter(w => w.known).length;
+  document.getElementById('hTotal').textContent = t;
+  document.getElementById('hKnown').textContent = k;
+  document.getElementById('navBadge').textContent = t;
+}
+
+// ── NAV ──
+function go(name, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('vw-' + name).classList.add('active');
+  el.classList.add('active');
+  document.querySelector('.scroll-area').scrollTop = 0;
+  if (name === 'words') renderWords();
+  if (name === 'study') initStudy();
+  if (name === 'stats') renderStats();
+}
+
+// ── FILTER ──
+function setF(f, el) {
+  filter = f;
+  document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderWords();
+}
+
+// ── RENDER WORDS ──
+function renderWords() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  const list = W.filter(w => {
+    const m = w.word.toLowerCase().includes(q) || w.def.toLowerCase().includes(q);
+    if (filter === 'known') return m && w.known;
+    if (filter === 'unknown') return m && !w.known;
+    return m;
+  });
+  const grid = document.getElementById('wordGrid');
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-msg">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <h3>Олдсонгүй</h3>
+      <p>${W.length === 0 ? 'Үг нэмж эхэлнэ үү.' : 'Хайлтад тохирох үг байхгүй.'}</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = list.map(w => {
+    const ri = W.indexOf(w);
+    return `<div class="wcard ${w.known ? 'known' : ''}">
+      <div class="wcard-accent"></div>
+      <div class="wcard-body">
+        <div class="wcard-word">${esc(w.word)}</div>
+        <div class="wcard-def">${esc(w.def)}</div>
+        ${w.eg ? `<div class="wcard-eg">${esc(w.eg)}</div>` : ''}
+        ${w.tag ? `<span class="wcard-tag">${esc(w.tag)}</span>` : ''}
+      </div>
+      <div class="wcard-acts">
+        <button class="know-btn" onclick="toggleKnown(${ri})">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+        <button class="del-btn" onclick="delWord(${ri})">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADD ──
+function addWord() {
+  const word = document.getElementById('fw').value.trim();
+  const def  = document.getElementById('fd').value.trim();
+  const eg   = document.getElementById('fn').value.trim();
+  const tag  = document.getElementById('ft').value.trim();
+  if (!word || !def) { toast('Үг болон утга оруулна уу'); return; }
+  W.unshift({ word, def, eg, tag, known: false, id: Date.now() });
+  save(); clearForm();
+  toast('"' + word + '" нэмэгдлээ ✓');
+}
+function clearForm() { ['fw','fd','fn','ft'].forEach(id => document.getElementById(id).value = ''); }
+function delWord(i) { W.splice(i, 1); save(); renderWords(); }
+function toggleKnown(i) { W[i].known = !W[i].known; save(); renderWords(); }
+
+// ── FILE ──
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); [...e.dataTransfer.files].forEach(readFile); });
+function handleFile(e) { [...e.target.files].forEach(readFile); e.target.value = ''; }
+function readFile(file) { const r = new FileReader(); r.onload = e => parseText(e.target.result); r.readAsText(file, 'UTF-8'); }
+function parseText(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  let added = 0, skipped = 0;
+  const hp = /^(word|үг|term|front|english|монгол|definition|def|meaning)/i;
+  lines.forEach(line => {
+    if (hp.test(line.trim())) return;
+    let p = line.split('\t');
+    if (p.length < 2) p = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+    p = p.map(x => x.trim().replace(/^["']|["']$/g, ''));
+    if (p.length >= 2 && p[0] && p[1]) {
+      if (!W.find(w => w.word.toLowerCase() === p[0].toLowerCase())) {
+        W.push({ word: p[0], def: p[1], eg: p[2]||'', tag: p[3]||'', known: false, id: Date.now() + Math.random() });
+        added++;
+      } else skipped++;
+    }
+  });
+  save(); renderWords();
+  toast(skipped > 0 ? `${added} үг нэмэгдлээ · ${skipped} давхардал` : `${added} үг нэмэгдлээ ✓`);
+}
+
+// ── STUDY ──
+function setMode(m, el) {
+  studyMode = m;
+  document.querySelectorAll('.mode-pill').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  initStudy();
+}
+function initStudy() {
+  sIdx = 0; sFlipped = false; sSessionKnown = 0;
+  studyQ = studyMode === 'unknown' ? W.filter(w => !w.known) : [...W];
+  for (let i = studyQ.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [studyQ[i], studyQ[j]] = [studyQ[j], studyQ[i]];
+  }
+  const em = document.getElementById('studyEmpty');
+  const dn = document.getElementById('studyDone');
+  const mn = document.getElementById('studyMain');
+  if (W.length === 0) {
+    em.style.display = ''; dn.style.display = 'none'; mn.style.display = 'none';
+    document.getElementById('emptyTxt').textContent = 'Эхлээд үгс нэмнэ үү';
+    return;
+  }
+  if (studyQ.length === 0) {
+    em.style.display = ''; dn.style.display = 'none'; mn.style.display = 'none';
+    document.getElementById('emptyTitle').textContent = 'Бүгдийг мэддэг болсон!';
+    document.getElementById('emptyTxt').textContent = 'Бүх үгийг мэддэг болсон байна 🎉';
+    return;
+  }
+  em.style.display = 'none'; dn.style.display = 'none'; mn.style.display = '';
+  showCard();
+}
+function showCard() {
+  if (sIdx >= studyQ.length) {
+    document.getElementById('studyMain').style.display = 'none';
+    document.getElementById('studyDone').style.display = '';
+    return;
+  }
+  const w = studyQ[sIdx];
+  document.getElementById('cWord').textContent = w.word;
+  document.getElementById('cDef').textContent = w.def;
+  document.getElementById('cTag').textContent = w.tag || '';
+  const eg = document.getElementById('cEg');
+  if (w.eg) { eg.textContent = w.eg; eg.style.display = ''; }
+  else { eg.style.display = 'none'; }
+  document.getElementById('cardFront').style.display = 'flex';
+  document.getElementById('cardBack').style.display = 'none';
+  sFlipped = false;
+  document.getElementById('cProgFill').style.width = (studyQ.length ? sIdx / studyQ.length * 100 : 0) + '%';
+  document.getElementById('cIdx').textContent = sIdx + 1;
+  document.getElementById('cTot').textContent = studyQ.length;
+  document.getElementById('cSession').textContent = sSessionKnown + ' мэддэг болсон';
+}
+function flipCard() {
+  sFlipped = !sFlipped;
+  document.getElementById('cardFront').style.display = sFlipped ? 'none' : 'flex';
+  document.getElementById('cardBack').style.display = sFlipped ? 'flex' : 'none';
+}
+function answer(correct) {
+  const w = studyQ[sIdx];
+  const ri = W.findIndex(x => x.id === w.id);
+  if (ri >= 0) W[ri].known = correct;
+  if (correct) sSessionKnown++;
+  save(); sIdx++; showCard();
+}
+function skipCard() { sIdx++; showCard(); }
+function restartStudy() { document.getElementById('studyDone').style.display = 'none'; initStudy(); }
+
+// ── STATS ──
+function renderStats() {
+  const total = W.length, known = W.filter(w => w.known).length, unknown = total - known;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-c"><div class="stat-n">${total}</div><div class="stat-l">Нийт үг</div></div>
+    <div class="stat-c s-lav"><div class="stat-n">${total ? Math.round(known / total * 100) : 0}%</div><div class="stat-l">Амжилт</div></div>
+    <div class="stat-c s-teal"><div class="stat-n">${known}</div><div class="stat-l">Мэддэг</div></div>
+    <div class="stat-c s-rose"><div class="stat-n">${unknown}</div><div class="stat-l">Мэдэхгүй</div></div>`;
+  document.getElementById('progSection').innerHTML = `
+    <div class="ps-row"><span>Нийт үг</span><b>${total}</b></div>
+    <div class="ps-bar"><div class="ps-fill pf-lav" style="width:${total > 0 ? 100 : 0}%"></div></div>
+    <div class="ps-row"><span>Мэддэг болсон</span><b>${known}</b></div>
+    <div class="ps-bar"><div class="ps-fill pf-teal" style="width:${total ? known / total * 100 : 0}%"></div></div>`;
+  const tags = {};
+  W.forEach(w => { const t = w.tag || '—'; if (!tags[t]) tags[t] = {t:0,k:0}; tags[t].t++; if(w.known) tags[t].k++; });
+  document.getElementById('tagList').innerHTML = Object.entries(tags).length
+    ? Object.entries(tags).sort((a,b) => b[1].t - a[1].t).map(([tag, d]) => `
+      <div class="tag-item">
+        <div class="tag-name">${esc(tag)}</div>
+        <div class="tag-bar-w"><div class="tag-bar-f" style="width:${d.t ? d.k/d.t*100 : 0}%"></div></div>
+        <div class="tag-frac">${d.k}/${d.t}</div>
+      </div>`).join('')
+    : '<p style="font-size:13px;color:var(--dim)">Үг байхгүй</p>';
+}
+
+// ── EXPORT ──
+function exportTxt() {
+  const txt = W.map(w => [w.word, w.def, w.eg, w.tag].join('\t')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
+  a.download = 'lexis_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.click();
+  toast('Экспорт амжилттай ✓');
+}
+function clearAll() {
+  if (!confirm('Бүх үгийг устгах уу? Энэ үйлдлийг буцааж болохгүй!')) return;
+  W = []; save(); renderWords(); toast('Бүгд устгагдлаа');
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── iOS INSTALL HINT ──
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone;
+if (isIOS) document.getElementById('installBar').style.display = 'flex';
+
+// ── SERVICE WORKER (PWA offline support) ──
+if ('serviceWorker' in navigator) {
+  const sw = `
+    const CACHE = 'lexis-v1';
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/lexis-app.html'])));
+      self.skipWaiting();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+    });
+  `;
+  const blob = new Blob([sw], { type: 'application/javascript' });
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+}
+
+// ── INIT ──
+updateHeader(); renderWords();
+</script>
+</body>
+</html>
